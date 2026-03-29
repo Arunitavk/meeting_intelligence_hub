@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+psycopg2-binary
+pgvector
+pydantic
+pydantic-settings
+alembic
+python-multipart
+webvtt-py
+python-dotenv
+PyPDF2
