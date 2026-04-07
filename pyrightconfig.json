@@ -1,0 +1,7 @@
+{
+  "extraPaths": [
+    "./meeting-intelligence-hub/backend"
+  ],
+  "venvPath": ".",
+  "venv": ".venv"
+}

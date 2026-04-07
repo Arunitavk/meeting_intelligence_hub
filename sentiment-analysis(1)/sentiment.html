@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentiment Analysis — Meeting Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0d0f14;
+  --bg2:#13161e;
+  --bg3:#1a1e28;
+  --bg4:#1f2333;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --text:#e2e8f0;
+  --text2:#8892a4;
+  --text3:#4a5568;
+  --accent:#3b82f6;
+  --accent2:#60a5fa;
+  --green:#22c55e;
+  --green-dim:rgba(34,197,94,0.15);
+  --orange:#f97316;
+  --orange-dim:rgba(249,115,22,0.15);
+  --yellow:#eab308;
+  --yellow-dim:rgba(234,179,8,0.15);
+  --red:#ef4444;
+  --red-dim:rgba(239,68,68,0.15);
+  --slate:#94a3b8;
+  --slate-dim:rgba(148,163,184,0.1);
+  --r:10px;
+}
+
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5}
+
+/* ── Page shell ── */
+.page{max-width:1100px;margin:0 auto;padding:32px 24px 60px}
+
+/* ── Page header ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap}
+.breadcrumb{font-size:11px;color:var(--text3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.breadcrumb span{color:var(--accent2)}
+.page-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1.2}
+.page-meta{display:flex;align-items:center;gap:16px;margin-top:6px;color:var(--text2);font-size:12px}
+.page-meta svg{opacity:.5}
+.export-btn{display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .2s}
+.export-btn:hover{background:var(--bg4);border-color:var(--accent)}
+
+/* ── Tab bar ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:28px}
+.tab{padding:10px 20px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+
+/* ── Section label ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:600;letter-spacing:-.2px}
+.section-hint{font-size:11px;color:var(--text3)}
+
+/* ── Timeline card ── */
+.timeline-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:20px}
+.speaker-row{display:grid;grid-template-columns:130px 1fr;align-items:center;gap:16px;margin-bottom:20px}
+.speaker-row:last-child{margin-bottom:0}
+.speaker-info{text-align:right}
+.speaker-name{font-weight:500;font-size:13px;color:var(--text)}
+.speaker-role{font-size:11px;color:var(--text3);margin-top:1px;text-transform:uppercase;letter-spacing:.4px}
+.timeline-track{display:flex;align-items:center;gap:6px;position:relative;min-height:52px}
+.segment{
+  position:relative;border-radius:22px;height:40px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;transition:all .2s;
+  font-size:18px;flex-shrink:0;
+  border:1px solid transparent;
+}
+.segment:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.segment.active{outline:2px solid rgba(255,255,255,0.3);outline-offset:2px}
+.seg-time{
+  position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:var(--text3);white-space:nowrap;font-family:'DM Mono','Courier New',monospace;
+}
+.seg-gap{flex:1;height:1px;background:var(--border);min-width:6px}
+
+/* ── Bottom grid ── */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:720px){.bottom-grid{grid-template-columns:1fr}}
+
+/* ── Engagement matrix ── */
+.matrix-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.matrix-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:600;margin-bottom:18px}
+.speaker-stat{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.speaker-stat:last-child{margin-bottom:0}
+.speaker-avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bg3)}
+.speaker-avatar img{width:100%;height:100%;object-fit:cover}
+.speaker-avatar-fallback{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
+.stat-body{flex:1;min-width:0}
+.stat-name-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.stat-name{font-weight:500;font-size:13px}
+.stat-talk{font-size:11px;color:var(--text2)}
+.stat-shift{font-size:12px;font-weight:500}
+.stat-shift.pos{color:var(--green)}
+.stat-shift.neg{color:var(--red)}
+.progress-track{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-bottom:2px}
+.progress-fill{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.progress-sentiment{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.sentiment-fill{height:100%;border-radius:2px}
+
+/* ── Legend card ── */
+.legend-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.legend-title{font-size:11px;font-weight:500;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:16px}
+.legend-item{display:flex;gap:12px;margin-bottom:14px;cursor:default}
+.legend-item:last-child{margin-bottom:0}
+.legend-emoji{font-size:20px;flex-shrink:0;width:28px;text-align:center}
+.legend-label{font-weight:500;font-size:13px}
+.legend-quote{font-size:11px;color:var(--text3);font-style:italic;margin-top:1px}
+
+/* ── Transcript popover ── */
+.popover-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center}
+.popover-overlay.open{display:flex}
+.popover{background:var(--bg3);border:1px solid var(--border2);border-radius:14px;padding:24px;max-width:480px;width:90%;position:relative;animation:popIn .2s ease}
+@keyframes popIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.popover-close{position:absolute;top:14px;right:14px;background:var(--bg4);border:none;color:var(--text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.popover-speaker{font-weight:600;font-size:15px;margin-bottom:4px}
+.popover-time{font-size:11px;color:var(--text3);font-family:'DM Mono','Courier New',monospace;margin-bottom:14px}
+.popover-sentiment{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;margin-bottom:14px}
+.popover-text{font-size:13px;color:var(--text2);line-height:1.7;border-left:2px solid var(--border2);padding-left:12px}
+
+/* ── Overall score pill ── */
+.overall-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap}
+.score-pill{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500}
+.meeting-stat{font-size:12px;color:var(--text2)}
+.meeting-stat span{color:var(--text);font-weight:500}
+
+/* ── Loading state ── */
+.loading-state{text-align:center;padding:80px 20px;color:var(--text2)}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Upload prompt ── */
+.upload-prompt{text-align:center;padding:60px 20px;color:var(--text2)}
+.upload-prompt h3{font-family:'Syne',sans-serif;font-size:18px;color:var(--text);margin-bottom:8px}
+
+/* ── Error ── */
+.error-banner{background:var(--red-dim);border:1px solid var(--red);border-radius:8px;padding:12px 16px;color:var(--red);font-size:13px;margin-bottom:20px;display:none}
+.error-banner.show{display:block}
+
+/* ── Animate in ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .4s ease forwards}
+.fade-up-1{animation-delay:.05s;opacity:0}
+.fade-up-2{animation-delay:.12s;opacity:0}
+.fade-up-3{animation-delay:.20s;opacity:0}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="breadcrumb">Projects &rsaquo; <span id="project-label">ATLAS Q3</span></div>
+      <div class="page-title" id="meeting-title">Project Atlas: Q3 Planning</div>
+      <div class="page-meta">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="meeting-date">October 12, 2023</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="meeting-duration">45 mins</span>
+      </div>
+    </div>
+    <button class="export-btn" onclick="exportData()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export to CSV/PDF
+    </button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab" onclick="switchTab('action')">Action Items</div>
+    <div class="tab" onclick="switchTab('decisions')">Critical Decisions</div>
+    <div class="tab active" onclick="switchTab('sentiment')">Sentiment Analysis</div>
+  </div>
+
+  <!-- Error banner -->
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- Content area -->
+  <div id="sentiment-content">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <div>Loading sentiment analysis…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Transcript popover -->
+<div class="popover-overlay" id="popover-overlay" onclick="closePopover(event)">
+  <div class="popover" id="popover">
+    <button class="popover-close" onclick="closePopoverDirect()">✕</button>
+    <div class="popover-speaker" id="pop-speaker"></div>
+    <div class="popover-time" id="pop-time"></div>
+    <div class="popover-sentiment" id="pop-sentiment"></div>
+    <div class="popover-text" id="pop-text"></div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Set this to your actual API base URL in production
+const API_BASE = window.API_BASE || 'http://localhost:3001/api';
+
+// Get meeting ID from URL: /sentiment?meetingId=xxx  OR use demo data
+const params = new URLSearchParams(location.search);
+const MEETING_ID = params.get('meetingId');
+
+// ─── DEMO DATA (shown when no meetingId is in URL) ────────────────────────────
+const DEMO = {
+  meetingName: 'Project Atlas: Q3 Planning',
+  meetingDate: '2023-10-12',
+  meetingDuration: 45,
+  overallScore: 0.18,
+  overallClassification: { label: 'High Enthusiasm', emoji: '🔥', color: '#f97316' },
+  totalTurns: 42,
+  speakers: [
+    {
+      name: 'Sarah J.', role: 'PROJECT LEAD',
+      avgScore: 0.42, classification: { label: 'Positive', emoji: '😊', color: '#22c55e' },
+      talkPercent: 38, sentimentShift: 12.4,
+      turns: []
+    },
+    {
+      name: 'Marcus L.', role: 'TECH ARCH',
+      avgScore: -0.15, classification: { label: 'Skepticism', emoji: '🤨', color: '#eab308' },
+      talkPercent: 32, sentimentShift: -8.1,
+      turns: []
+    },
+    {
+      name: 'Elena R.', role: 'PRODUCT',
+      avgScore: 0.35, classification: { label: 'Positive', emoji: '😊', color: '#22c55e' },
+      talkPercent: 30, sentimentShift: 15.2,
+      turns: []
+    },
+  ],
+  timeline: [
+    {
+      speaker: 'Sarah J.',
+      buckets: [
+        { minuteStart: 5,  label: '05:12', score: 0.6, emoji: '😊', color: '#22c55e', label2: 'Positive',        snippets: ['Team agrees this is the best path forward.'] },
+        { minuteStart: 12, label: '12:45', score: 0.7, emoji: '🔥', color: '#f97316', label2: 'High Enthusiasm',  snippets: ['This new UI is absolutely world-class.'] },
+        { minuteStart: 28, label: '28:30', score: -0.1, emoji: '🤨', color: '#eab308', label2: 'Skepticism',      snippets: ['Are we sure the servers can handle this load?'] },
+      ]
+    },
+    {
+      speaker: 'Marcus L.',
+      buckets: [
+        { minuteStart: 18, label: '18:10', score: -0.45, emoji: '⚠️', color: '#ef4444', label2: 'Critical Concern', snippets: ['The legacy authentication bridge is failing stress tests.'] },
+        { minuteStart: 32, label: '32:05', score: -0.1,  emoji: '🤨', color: '#eab308', label2: 'Skepticism',       snippets: ['I still have latency concerns with the mobile API.'] },
+        { minuteStart: 39, label: '39:40', score: 0.55,  emoji: '🚀', color: '#22c55e', label2: 'Positive',         snippets: ['If we use the proposed fix, I think we can ship on time.'] },
+      ]
+    },
+    {
+      speaker: 'Elena R.',
+      buckets: [
+        { minuteStart: 25, label: '25:15', score: 0.6, emoji: '⚡', color: '#f97316', label2: 'High Enthusiasm', snippets: ['The product team is fully aligned and ready to go.'] },
+        { minuteStart: 37, label: '37:50', score: 0.5, emoji: '✅', color: '#22c55e', label2: 'Positive',        snippets: ['Elena agrees the rescheduling makes sense for the team.'] },
+      ]
+    },
+  ]
+};
+
+const LEGEND = [
+  { emoji: '😊', label: 'Positive Sentiment',  quote: '"Team agrees this is the best path forward."',  color: '#22c55e', dim: 'rgba(34,197,94,0.1)' },
+  { emoji: '🔥', label: 'High Enthusiasm',      quote: '"This new UI is absolutely world-class."',      color: '#f97316', dim: 'rgba(249,115,22,0.1)' },
+  { emoji: '🤨', label: 'Skepticism',           quote: '"Are we sure the servers can handle this load?"', color: '#eab308', dim: 'rgba(234,179,8,0.1)' },
+  { emoji: '⚠️', label: 'Critical Concern',     quote: '"This structural risk could break the build."',  color: '#ef4444', dim: 'rgba(239,68,68,0.1)' },
+];
+
+// Speaker color palette for avatars
+const AVATAR_COLORS = [
+  { bg: 'rgba(59,130,246,0.15)', color: '#60a5fa' },
+  { bg: 'rgba(239,68,68,0.15)',  color: '#f87171' },
+  { bg: 'rgba(34,197,94,0.15)',  color: '#4ade80' },
+  { bg: 'rgba(168,85,247,0.15)', color: '#c084fc' },
+  { bg: 'rgba(249,115,22,0.15)', color: '#fb923c' },
+];
+
+function initials(name) {
+  return name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render(data) {
+  // Update header
+  document.getElementById('meeting-title').textContent = data.meetingName || 'Meeting';
+  document.getElementById('project-label').textContent = (data.meetingName || 'MEETING').toUpperCase().slice(0, 12);
+  if (data.meetingDate) {
+    const d = new Date(data.meetingDate);
+    document.getElementById('meeting-date').textContent = d.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  }
+  if (data.meetingDuration) {
+    document.getElementById('meeting-duration').textContent = `${data.meetingDuration} mins`;
+  }
+
+  const oc = data.overallClassification || {};
+
+  document.getElementById('sentiment-content').innerHTML = `
+    <!-- Overall row -->
+    <div class="overall-row fade-up fade-up-1">
+      <div class="score-pill" style="background:${oc.color ? oc.color+'22' : '#ffffff11'};color:${oc.color || '#fff'}">
+        ${oc.emoji || '📊'} ${oc.label || 'Analysed'}
+      </div>
+      <div class="meeting-stat">Overall score: <span>${data.overallScore > 0 ? '+' : ''}${Math.round((data.overallScore || 0) * 100)}%</span></div>
+      <div class="meeting-stat">Turns analysed: <span>${data.totalTurns || 0}</span></div>
+    </div>
+
+    <!-- Timeline card -->
+    <div class="section-header fade-up fade-up-1">
+      <div class="section-title">Sentiment Timeline</div>
+      <div class="section-hint">Click segments for transcript context</div>
+    </div>
+    <div class="timeline-card fade-up fade-up-2" id="timeline-card"></div>
+
+    <!-- Bottom grid -->
+    <div class="bottom-grid fade-up fade-up-3">
+      <div class="matrix-card">
+        <div class="matrix-title">Active Engagement Matrix</div>
+        <div id="matrix-body"></div>
+      </div>
+      <div class="legend-card">
+        <div class="legend-title">Sentiment Legend</div>
+        ${LEGEND.map(l => `
+          <div class="legend-item">
+            <div class="legend-emoji">${l.emoji}</div>
+            <div>
+              <div class="legend-label" style="color:${l.color}">${l.label}</div>
+              <div class="legend-quote">${l.quote}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  renderTimeline(data.timeline || [], data.meetingDuration || 60);
+  renderMatrix(data.speakers || []);
+}
+
+function renderTimeline(timeline, duration) {
+  const card = document.getElementById('timeline-card');
+  if (!timeline.length) { card.innerHTML = '<div style="color:var(--text3);padding:20px;text-align:center">No timeline data</div>'; return; }
+
+  card.innerHTML = timeline.map(row => {
+    if (!row.buckets || row.buckets.length === 0) return '';
+    // Sort buckets by time
+    const buckets = [...row.buckets].sort((a, b) => a.minuteStart - b.minuteStart);
+    const segments = buildTrack(buckets, duration, row.speaker);
+
+    return `
+      <div class="speaker-row">
+        <div class="speaker-info">
+          <div class="speaker-name">${row.speaker}</div>
+          <div class="speaker-role">${getSpeakerRole(row.speaker)}</div>
+        </div>
+        <div class="timeline-track">${segments}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function buildTrack(buckets, duration, speaker) {
+  let html = '';
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i];
+    const prev = buckets[i - 1];
+    // Gap filler between segments
+    if (prev) {
+      const gap = b.minuteStart - (prev.minuteStart + 5);
+      if (gap > 0) html += `<div class="seg-gap" style="flex:${gap}"></div>`;
+    }
+    // Width proportional to meeting duration
+    const widthFlex = Math.max(1.5, (5 / duration) * 10);
+    const snippetData = JSON.stringify({ speaker, time: b.label, snippets: b.snippets || [], score: b.score, emoji: b.emoji, label: b.label2 || b.label }).replace(/"/g, '&quot;');
+    html += `
+      <div class="segment" 
+        style="background:${b.color}22;border-color:${b.color}44;flex:${widthFlex};min-width:56px"
+        title="${b.label2 || b.label}"
+        onclick="openPopover(this, '${snippetData}')"
+        data-score="${b.score}"
+      >
+        <span style="font-size:18px">${b.emoji}</span>
+        <div class="seg-time">${b.label}</div>
+      </div>
+    `;
+  }
+  return html;
+}
+
+function getSpeakerRole(name) {
+  // In a real app this comes from transcript metadata
+  const roles = { 'Sarah J.': 'PROJECT LEAD', 'Marcus L.': 'TECH ARCH', 'Elena R.': 'PRODUCT' };
+  return roles[name] || 'PARTICIPANT';
+}
+
+function renderMatrix(speakers) {
+  const body = document.getElementById('matrix-body');
+  body.innerHTML = speakers.map((sp, i) => {
+    const ac = AVATAR_COLORS[i % AVATAR_COLORS.length];
+    const shiftSign = sp.sentimentShift >= 0 ? '+' : '';
+    const shiftClass = sp.sentimentShift >= 0 ? 'pos' : 'neg';
+    const cls = sp.classification || {};
+
+    return `
+      <div class="speaker-stat">
+        <div class="speaker-avatar-fallback" style="background:${ac.bg};color:${ac.color}">
+          ${initials(sp.name)}
+        </div>
+        <div class="stat-body">
+          <div class="stat-name-row">
+            <div>
+              <span class="stat-name">${sp.name}</span>
+              <span style="font-size:11px;color:var(--text3);margin-left:6px">${sp.talkPercent}% total talk-time</span>
+            </div>
+            <div>
+              <span class="stat-shift ${shiftClass}">${shiftSign}${sp.sentimentShift}%</span>
+              <div style="font-size:10px;color:var(--text3);text-align:right">SENTIMENT SHIFT</div>
+            </div>
+          </div>
+          <!-- Talk time bar -->
+          <div class="progress-track" style="margin-bottom:4px">
+            <div class="progress-fill" style="width:${sp.talkPercent}%;background:${ac.color}66"></div>
+          </div>
+          <!-- Sentiment bar (centered at 50%) -->
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${Math.round(((sp.avgScore + 1) / 2) * 100)}%;background:${cls.color || '#94a3b8'}88"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ─── POPOVER ─────────────────────────────────────────────────────────────────
+function openPopover(el, dataStr) {
+  try { var d = JSON.parse(dataStr.replace(/&quot;/g, '"')); } catch(e) { return; }
+  document.querySelectorAll('.segment.active').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+
+  document.getElementById('pop-speaker').textContent = d.speaker;
+  document.getElementById('pop-time').textContent = `Segment at ${d.time}`;
+  const sentEl = document.getElementById('pop-sentiment');
+  sentEl.textContent = `${d.emoji}  ${d.label}`;
+  sentEl.style.cssText = `background:${getColor(d.score)}22;color:${getColor(d.score)};`;
+  document.getElementById('pop-text').innerHTML = (d.snippets || []).map(s => `<p style="margin-bottom:6px">${s}</p>`).join('');
+
+  document.getElementById('popover-overlay').classList.add('open');
+}
+
+function getColor(score) {
+  if (score >= 0.4) return '#22c55e';
+  if (score >= 0.1) return '#f97316';
+  if (score >= 0)   return '#94a3b8';
+  if (score >= -0.3) return '#eab308';
+  return '#ef4444';
+}
+
+function closePopover(e) {
+  if (e.target === document.getElementById('popover-overlay')) closePopoverDirect();
+}
+function closePopoverDirect() {
+  document.getElementById('popover-overlay').classList.remove('open');
+  document.querySelectorAll('.segment.active').forEach(s => s.classList.remove('active'));
+}
+
+// ─── TAB SWITCH ───────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  // In a real app, route to the correct view here
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportData() {
+  alert('Export feature: wire this to your backend /api/sentiment/:id/export endpoint.');
+}
+
+// ─── LOAD ─────────────────────────────────────────────────────────────────────
+async function load() {
+  if (!MEETING_ID) {
+    // No meetingId — render demo data
+    render(DEMO);
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/sentiment/${MEETING_ID}`);
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    render(data);
+  } catch (err) {
+    const banner = document.getElementById('error-banner');
+    banner.textContent = `Could not load sentiment data: ${err.message}`;
+    banner.classList.add('show');
+    // Fall back to demo
+    render(DEMO);
+  }
+}
+
+load();
+</script>
+</body>
+</html>

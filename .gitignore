@@ -1,0 +1,76 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+.next/
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+meeting_hub.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+.turbo/
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+
+# Nested git repositories (submodules managed separately)
+meeting-intelligence-hub/
+
+# Test files
+test.pdf
+test_*.py
