@@ -36,7 +36,8 @@ async def extract_and_store_meeting_items(db: AsyncSession, meeting_id: int, con
     await db.execute(delete(ActionItem).where(ActionItem.meeting_id == meeting_id))
     await db.commit()
 
-    extractions = await extract_decisions_and_actions(full_text)
+    # Pass segments to extraction function to preserve speaker context
+    extractions = await extract_decisions_and_actions(segments=segments)
     logger.info(f"Immediate extraction for meeting {meeting_id}: {len(extractions.get('decisions', []))} decisions, {len(extractions.get('action_items', []))} actions")
     for d in extractions.get("decisions", []):
         db.add(Decision(

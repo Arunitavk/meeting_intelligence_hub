@@ -177,9 +177,42 @@ Return JSON in this exact structure:
   "unconfirmed": []
 }"""
 
-async def extract_decisions_and_actions(text: str, use_llm: bool = True) -> dict:
-    """Extract decisions, action items, and more using a chunked universal extraction engine."""
+async def extract_decisions_and_actions(text: str = None, use_llm: bool = True, segments: list = None) -> dict:
+    """Extract decisions, action items, and more using a chunked universal extraction engine.
+    
+    Args:
+        text: Full concatenated transcript text (legacy, deprecated)
+        use_llm: Whether to use LLM for extraction fallback
+        segments: List of segment dicts with 'text', 'speaker', 'start_time', 'end_time' keys
+    """
     import asyncio
+    
+    # If segments provided, reconstruct text with speaker labels for better context
+    if segments:
+        text_lines = []
+        for seg in segments:
+            speaker = seg.get('speaker', 'Unknown')
+            seg_text = seg.get('text', '').strip()
+            if seg_text:
+                # Remove timestamp prefix if present (e.g., "[00:10:20] Speaker" -> "Speaker")
+                # Pattern: [HH:MM:SS] prefix
+                speaker_clean = re.sub(r'^\[\d{2}:\d{2}:\d{2}\]\s*', '', speaker) if speaker else 'Unknown'
+                # Format: "Speaker: text" to preserve context
+                if speaker_clean and speaker_clean != 'Unknown' and speaker_clean not in ['MEETING', 'DATE', 'PARTICIPANTS']:
+                    text_lines.append(f"{speaker_clean}: {seg_text}")
+                elif seg_text:
+                    text_lines.append(seg_text)
+        text = "\n".join(text_lines)
+    
+    
+    if not text:
+        return {
+            "decisions": [],
+            "action_items": [],
+            "discussion_points": [],
+            "speaker_items": [],
+            "unconfirmed": []
+        }
     
     def is_valid_decision_text(raw_line: str) -> bool:
         if not raw_line:
@@ -235,6 +268,23 @@ async def extract_decisions_and_actions(text: str, use_llm: bool = True) -> dict
         due_date = None
         text = raw_line.strip()
 
+        # Strategy 1: Extract speaker from "Speaker: text" format
+        if ": " in text:
+            parts = text.split(": ", 1)
+            if len(parts[0].split()) <= 3 and parts[0][0].isupper():  # likely a speaker name
+                speaker_candidate = parts[0]
+                action_text = parts[1]
+                # Only use as assignee if it looks like a name
+                if re.match(r'^[A-Z][a-z]+(\s+[A-Z][a-z]+)?$', speaker_candidate):
+                    assignee = speaker_candidate
+                    # Extract due date from the action text
+                    due_match = re.search(r'by\s+([^.!?,\n]+?)(?=[.!?,\n]|$)', action_text, re.I)
+                    if due_match:
+                        due_date = due_match.group(1).strip()
+                    # Use action text for task
+                    text = action_text
+        
+        # Strategy 2: Look for explicit "owner:" or "due:" labels
         owner_match = re.search(r'owner[:\-]\s*([^\|\-–—]+)', text, re.I)
         if owner_match:
             assignee = owner_match.group(1).strip()
@@ -243,15 +293,26 @@ async def extract_decisions_and_actions(text: str, use_llm: bool = True) -> dict
         if due_match:
             due_date = due_match.group(1).strip()
 
+        # Strategy 3: Extract name from dash-prefixed format (e.g., "- John will do X")
         if not assignee:
             name_match = re.search(r'[-–—]\s*([A-Z][a-z]+)\b', text)
             if name_match:
                 assignee = name_match.group(1).strip()
 
+        # Strategy 4: Extract name from "FirstName will/shall/can" pattern (backward compat)
         if not assignee:
-            person_match = re.search(r'([A-Z][a-z]+)\s+(?:will|shall|can you|please|must|needs to|should)\b', text)
+            person_match = re.search(r'([A-Z][a-z]+)\s+(?:will|shall|can you|please|must|needs to|should|\'ll|\'re)\b', text)
             if person_match:
                 assignee = person_match.group(1).strip()
+
+        # Strategy 5: Extract due date from "by [date]" pattern if not already found
+        if not due_date:
+            due_match = re.search(r'by\s+([^.!?,\n]+?)(?=[.!?,\n]|$)', text, re.I)
+            if due_match:
+                due_date_candidate = due_match.group(1).strip()
+                # Only accept if it looks like a date (contains day/month/date keywords)
+                if any(x in due_date_candidate.lower() for x in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december', 'day', 'week', 'month', 'th', 'st', 'nd', 'rd']) or re.search(r'\d{1,2}', due_date_candidate):
+                    due_date = due_date_candidate
 
         return {
             "assignee": assignee,
@@ -289,7 +350,7 @@ async def extract_decisions_and_actions(text: str, use_llm: bool = True) -> dict
         }
 
     decision_cues = re.compile(r'\b(?:decision|decided|agreed|consensus|resolved|final decision|approved|approve|we will|we\'ll|we are going to|we are going with|we should|we should proceed|we should move forward|the team agreed|the team decided|it was decided|it was agreed|let\'s|lets|go ahead|move forward|sign off|authorize|authorise|authorised)\b', re.I)
-    action_cues = re.compile(r'\b(action item|to-?do|will (investigate|look into|complete|follow up|do|create|update|deploy|deliver|review|refactor|prepare|send|draft|schedule|coordinate)|please (do|review|send|prepare|coordinate|follow up|ensure)|can you|follow[ -]?up|needs to|must (review|update|complete|send|prepare|coordinate|investigate)|owner:|task:|due:)\b', re.I)
+    action_cues = re.compile(r'\b(action item|to-?do|i\'ll|i will|we\'ll|will (investigate|look into|complete|follow up|do|create|update|deploy|deliver|review|refactor|prepare|send|draft|schedule|coordinate|take|optimize|provide|expand|analyze|inform)|please (do|review|send|prepare|coordinate|follow up|ensure)|can you|follow[ -]?up|needs to|must (review|update|complete|send|prepare|coordinate|investigate)|owner:|task:|due:)\b', re.I)
 
     # First pass: explicit line-level patterns for clearly labeled actions/decisions
     for raw_line in text.splitlines():
