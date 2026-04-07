@@ -1,109 +1,191 @@
 # Meeting Intelligence Hub
 
-An AI-powered meeting analysis platform that automatically extracts, summarizes, and organizes critical meeting insights into actionable intelligence. Transform long meeting transcripts into instant insights with AI-powered decision extraction, action item tracking, and intelligent chatbot capabilities.
+## The Problem
 
-## Overview
+Organizations generate hours of meeting content every week, but long transcripts (20+ pages) become "lost" information that nobody has time to read. Teams waste valuable time asking each other "What was decided in that meeting?" or "Did we agree to move forward?" instead of executing tasks—a cycle called "Double Work" that reduces productivity and creates team confusion.
 
-**Problem**: Organizations generate hours of meeting content weekly, but long transcripts (20+ pages) become "lost" information. Teams waste time asking "What happened in that meeting?" instead of executing tasks—a cycle called "Double Work."
+## The Solution
 
-**Solution**: Meeting Intelligence Hub automatically extracts decisions, action items, sentiment analysis, and provides intelligent search across all meetings.
+Meeting Intelligence Hub is an AI-powered meeting analysis platform that automatically extracts, summarizes, and organizes critical meeting insights into actionable intelligence. The platform uses advanced natural language processing to identify key decisions and action items, analyzes sentiment and team dynamics, and provides an intelligent chatbot interface that lets users ask questions about meeting content in natural language—transforming 20-page transcripts into 30-second insights.
 
-## Key Features
+**Key Features:**
+- ✅ Automatic decision extraction from meeting transcripts
+- ✅ Action item identification with assignees and due dates
+- ✅ Sentiment analysis and emotional context
+- ✅ Natural language Q&A chatbot with evidence citations
+- ✅ Real-time streaming responses and professional formatting
+- ✅ Cross-meeting search and insights dashboard
+- ✅ Meeting participant tracking and segment timestamps
 
-✅ **AI-Powered Insights**
-- Automatic decision extraction from transcripts
-- Action item identification with ownership & due dates
-- Sentiment analysis with emotional context
-- Meeting summarization
+## Tech Stack
 
-✅ **Intelligent Search**
-- Natural language chat interface
-- Context-aware question answering
-- Evidence citations with exact timestamps
-- Cross-meeting analysis
+**Programming Languages:**
+- Python 3.13
+- TypeScript
+- JavaScript
 
-✅ **Professional Quality**
-- Streaming responses with real-time display
-- Fallback intelligence when LLM unavailable
-- Meeting dashboard with all insights
-- Participant tracking
+**Backend Framework & Libraries:**
+- FastAPI (high-performance Python web framework)
+- SQLAlchemy (async ORM for database operations)
+- Uvicorn (ASGI web server)
+- Pydantic (data validation)
+- aiohttp (async HTTP client)
 
-## Architecture
+**Frontend Framework & Libraries:**
+- React 18 (UI framework)
+- Vite 5 (build tool)
+- Material-UI (component library)
+- Tailwind CSS (styling)
+- Axios (HTTP client)
 
-- **Backend**: Python 3.13, FastAPI, SQLAlchemy (async)
-- **Database**: SQLite with WAL optimization (serverless, no Docker needed)
-- **Frontend**: React 18, TypeScript, Vite, Material-UI, Tailwind CSS, Axios
-- **AI**: Claude (Anthropic), Gemini (Google) - with intelligent fallback
-- **Performance**: <200ms API response times
+**Database:**
+- SQLite (serverless, with WAL optimization)
+- aiosqlite (async SQLite driver)
 
-## Prerequisites
+**AI & NLP Services:**
+- Claude (Anthropic) - primary LLM
+- Gemini (Google) - fallback LLM
+- VADER Sentiment Analysis
+- Webvtt Parser (transcripts)
+- PyPDF2 (PDF processing)
 
-- **Python**: 3.10+ (tested with 3.13)
-- **Node.js**: v18+ with npm
-- **Text Editor**: VS Code recommended
-- **API Keys**: Anthropic Claude and Google Gemini (free tiers available)
+**Development & DevOps:**
+- Docker & Docker Compose (containerization)
+- Git & GitHub (version control)
+- Pytest (testing framework)
+- Alembic (database migrations)
 
-## Quick Start
+## Setup Instructions
 
-### 1. Clone Repository
+### Prerequisites
+
+Before starting, ensure you have installed:
+- **Python 3.10+** (tested with Python 3.13)
+- **Node.js v18+** with npm
+- **Git** for version control
+
+### Step 1: Clone the Repository
+
 ```bash
 git clone https://github.com/Arunitavk/meeting_intelligence_hub.git
 cd meeting-intelligence-hub
 ```
 
-### 2. Backend Setup
+### Step 2: Set Up Backend Dependencies
+
+Navigate to the backend directory and create a Python virtual environment:
+
 ```bash
 cd backend
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv .venv
 
-# Windows (PowerShell):
+# Activate virtual environment
+# On Windows (PowerShell):
 .venv\Scripts\Activate
 
-# macOS/Linux:
+# On macOS/Linux:
 source .venv/bin/activate
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration
-Create `backend/.env` file:
+### Step 3: Configure Environment Variables
+
+Create a `.env` file in the `backend/` directory with your API keys:
+
 ```bash
+# Backend directory
+cd backend
+
+# Create .env file (copy from .env.example)
+cp .env.example .env  # macOS/Linux
+copy backend\.env.example backend\.env  # Windows PowerShell
+```
+
+Edit the `.env` file and add your API keys:
+
+```env
 ANTHROPIC_API_KEY=your_claude_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 DATABASE_URL=sqlite+aiosqlite:///./meeting_hub.db
 ```
 
-**Get API Keys**:
-- Claude: https://console.anthropic.com (free tier available)
-- Gemini: https://ai.google.dev (free tier available)
+**Get Free API Keys:**
+- **Claude**: https://console.anthropic.com (Free tier: $5 monthly credit)
+- **Gemini**: https://ai.google.dev (Free tier available with limits)
 
-### 4. Frontend Setup
+### Step 4: Set Up Frontend Dependencies
+
+In a new terminal window, navigate to the frontend directory:
+
 ```bash
 cd frontend
+
+# Install Node dependencies
 npm install
 ```
 
-### 5. Start Development Servers
+### Step 5: Run the Application
 
-**Terminal 1 - Backend:**
+**Terminal 1 - Start Backend Server:**
+
 ```bash
 cd backend
+
+# Make sure virtual environment is activated
+.venv\Scripts\Activate  # Windows
+source .venv/bin/activate  # macOS/Linux
+
+# Start backend
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
-Backend available at: `http://localhost:8000`
-API docs at: `http://localhost:8000/docs`
 
-**Terminal 2 - Frontend:**
+Backend running at: `http://localhost:8000`  
+API documentation at: `http://localhost:8000/docs` (Swagger UI)
+
+**Terminal 2 - Start Frontend Server:**
+
 ```bash
 cd frontend
+
+# Start frontend development server
 npm run dev
 ```
-Frontend available at: `http://localhost:5173`
 
-## Features Included
+Frontend running at: `http://localhost:5173`
+
+### Step 6: Access the Application
+
+Open your web browser and navigate to:
+```
+http://localhost:5173
+```
+
+You should see the Meeting Intelligence Hub dashboard ready for use.
+
+
+
+## Additional Resources
+
+### API Endpoints
+
+The backend provides the following REST API endpoints:
+
+- `GET /health` - Health check
+- `GET /api/meetings/` - List all meetings
+- `GET /api/meetings/{id}` - Get meeting details
+- `GET /api/meetings/{id}/decisions` - Get meeting decisions
+- `GET /api/meetings/{id}/action_items` - Get action items
+- `POST /api/uploads/` - Upload files
+- `POST /api/chat/stream` - Stream chat response
+- `POST /api/chat` - Non-streaming chat
+
+Full API documentation available at `http://localhost:8000/docs` when the backend is running.
+
+### Features Included
 
 1. **Meeting Upload & Processing**
    - Multi-file upload (PDF, audio, transcripts)
@@ -122,7 +204,7 @@ Frontend available at: `http://localhost:5173`
    - Speaker tone analysis
 
 4. **Chatbot & Search**
-   - Natural language Q&A
+   - Natural language Q&A interface
    - Context-aware responses
    - Citation evidence with timestamps
    - Streaming responses
@@ -133,66 +215,54 @@ Frontend available at: `http://localhost:5173`
    - Meeting detail view
    - Sentiment trends
 
-## API Endpoints
+### Performance Metrics
 
-- `GET /health` - Health check
-- `GET /api/meetings/` - List all meetings
-- `GET /api/meetings/{id}` - Get meeting details
-- `GET /api/meetings/{id}/decisions` - Get meeting decisions
-- `GET /api/meetings/{id}/action_items` - Get action items
-- `POST /api/uploads/` - Upload files
-- `POST /api/chat/stream` - Stream chat response
-- `POST /api/chat` - Non-streaming chat
+The application achieves excellent performance:
 
-*Full API documentation available at `http://localhost:8000/docs` when running*
+- **Health check**: 176ms
+- **List meetings**: 121ms
+- **Action items**: 84ms
+- **Chat response**: <2 seconds (with LLM)
+- **Database response**: <200ms typical
+- **28x performance improvement** (database lock resolution)
 
-## Production Performance
-
-✅ **Response Times**:
-- Health check: 176ms
-- List meetings: 121ms
-- Action items: 84ms
-- Chat: <2s (with LLM)
-
-✅ **Reliability**:
-- Database locked issues: Fixed (28x performance improvement)
-- Rate-limiting: Handled with intelligent fallback
-- Data persistence: SQLite with automatic backups
-
-## Troubleshooting
+### Troubleshooting
 
 **"Connection refused" on localhost:8000**
-- Ensure backend is running: `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000`
+- Ensure backend is running
+- Verify virtual environment is activated
+- Check that port 8000 is not in use
 
 **"Cannot find module" errors**
-- Ensure virtual environment is activated
-- Run `pip install -r requirements.txt`
+- Ensure virtual environment is activated: `source .venv/bin/activate`
+- Reinstall dependencies: `pip install -r requirements.txt`
 
-**API key errors**
-- Check `.env` file exists with correct format
-- Verify API keys are valid and have quota
+**API key authentication errors**
+- Check `.env` file exists in the `backend/` directory
+- Verify API key values are correct
+- Ensure API keys have sufficient quota
 
-**Database locked**
-- Delete `backend/meeting_hub.db-wal` and `backend/meeting_hub.db-shm`
-- Restart backend
+**Database locked error**
+- Delete lock files: `backend/meeting_hub.db-wal` and `backend/meeting_hub.db-shm`
+- Restart the backend server
 
-## Contributing
+### Documentation
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+For more information, see:
 
-## License
+- [SOLUTION_OVERVIEW.md](SOLUTION_OVERVIEW.md) - Detailed problem statement and solution architecture
+- [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - Production deployment instructions for various platforms
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Guidelines for contributing to the project
 
-MIT License - See [LICENSE](LICENSE) file
-
-## Documentation
-
-- [Solution Overview](SOLUTION_OVERVIEW.md) - Problem statement and solution details
-- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Production deployment instructions
-- [Setup & Validation](VALIDATION_GUIDE.md) - Testing and validation steps
-
-## Support
+### Support & Contact
 
 For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Check existing documentation
-- Review API docs at `http://localhost:8000/docs`
+
+- Open an issue on [GitHub Issues](https://github.com/Arunitavk/meeting_intelligence_hub/issues)
+- Review the [API documentation](http://localhost:8000/docs) when running locally
+- Check existing issues and discussions
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines
+
+### License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) file for details.
