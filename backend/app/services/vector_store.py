@@ -1,48 +1,57 @@
+import math
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import text
-from app.models.domain import TranscriptSegment
+from app.models.domain import TranscriptSegment, Meeting
+
+def cosine_similarity(v1: list[float], v2: list[float]) -> float:
+    if not v1 or not v2 or len(v1) != len(v2):
+        return 0.0
+    dot_product = sum(a * b for a, b in zip(v1, v2))
+    magnitude1 = math.sqrt(sum(a * a for a in v1))
+    magnitude2 = math.sqrt(sum(a * a for a in v2))
+    if magnitude1 == 0 or magnitude2 == 0:
+        return 0.0
+    return dot_product / (magnitude1 * magnitude2)
 
 async def search_segments(db: AsyncSession, query_embedding: list[float], limit: int = 5, project_id: int = None, meeting_ids: list[int] = None):
     """
-    Search pgvector for closest segments.
-    Uses Cosine distance (<=>).
+    Search SQLite segments using manual cosine similarity.
     """
-    # Convert list to string formatted for pgvector: '[0.1, 0.2, ...]'
-    embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
-    
-    # Base query for cosine similarity
-    sql = """
-        SELECT ts.id, ts.meeting_id, ts.speaker_name, ts.text, ts.start_time, 
-               1 - (ts.embedding <=> :embedding) as similarity
-        FROM transcript_segments ts
-        JOIN meetings m ON ts.meeting_id = m.id
-        WHERE 1=1
-    """
-    params = {"embedding": embedding_str}
-    
+    # 1. Build filtered query - fetch both Segment and Meeting
+    from sqlalchemy.orm import joinedload
+    stmt = select(TranscriptSegment).options(joinedload(TranscriptSegment.meeting)).join(Meeting)
     if project_id:
-        sql += " AND m.project_id = :project_id"
-        params["project_id"] = project_id
-        
+        stmt = stmt.where(Meeting.project_id == project_id)
     if meeting_ids:
-        sql += " AND m.id = ANY(:meeting_ids)"
-        params["meeting_ids"] = meeting_ids
+        stmt = stmt.where(Meeting.id.in_(meeting_ids))
+    
+    result = await db.execute(stmt)
+    all_segments = result.scalars().all()
+    
+    # 2. Compute similarities in memory
+    scored_segments = []
+    for seg in all_segments:
+        if not seg.embedding:
+            continue
         
-    sql += " ORDER BY ts.embedding <=> :embedding LIMIT :limit"
-    params["limit"] = limit
-    
-    result = await db.execute(text(sql), params)
-    
-    segments = []
-    for row in result:
-        segments.append({
-            "id": row.id,
-            "meeting_id": row.meeting_id,
-            "speaker_name": row.speaker_name,
-            "text": row.text,
-            "start_time": row.start_time,
-            "similarity": row.similarity
+        # SQLite stores JSON field as list or string depending on driver; handle both
+        import json
+        emb = seg.embedding
+        if isinstance(emb, str):
+            emb = json.loads(emb)
+            
+        sim = cosine_similarity(query_embedding, emb)
+        scored_segments.append({
+            "id": seg.id,
+            "meeting_id": seg.meeting_id,
+            "meeting_title": seg.meeting.title if seg.meeting else "Unknown Meeting",
+            "meeting_date": seg.meeting.date.strftime("%Y-%m-%d") if seg.meeting and seg.meeting.date else "Unknown Date",
+            "speaker_name": seg.speaker_name,
+            "text": seg.text,
+            "start_time": seg.start_time,
+            "similarity": sim
         })
-        
-    return segments
+    
+    # 3. Sort and limit
+    scored_segments.sort(key=lambda x: x["similarity"], reverse=True)
+    return scored_segments[:limit]

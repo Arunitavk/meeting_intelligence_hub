@@ -1,8 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import Dashboard from './pages/Dashboard';
 import MeetingDetail from './pages/MeetingDetail';
-import Layout from './components/Layout';
+import UploadDashboard from './pages/UploadDashboard';
 
 const darkTheme = createTheme({
   palette: {
@@ -23,17 +22,30 @@ const darkTheme = createTheme({
   }
 });
 
+function AppRoutes() {
+  const location = useLocation();
+
+  if (location.pathname === '/') {
+    return (
+      <Routes>
+        <Route path="/" element={<UploadDashboard />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/meeting/:id" element={<MeetingDetail />} />
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/meeting/:id" element={<MeetingDetail />} />
-          </Routes>
-        </Layout>
+        <AppRoutes />
       </Router>
     </ThemeProvider>
   );

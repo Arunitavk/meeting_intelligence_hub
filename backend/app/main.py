@@ -19,12 +19,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import logging
+
+logger = logging.getLogger("app.main")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    logger.error(f"422 Validation Error: {exc.errors()}\nBody: {await request.body()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(await request.body())},
+    )
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting up database...")
     async with engine.begin() as conn:
-        # Create pgvector extension if not exists
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        # Create pgvector extension if not exists (only for Postgres)
+        if "postgresql" in str(engine.url):
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
         # Create tables automatically for demo
         await conn.run_sync(Base.metadata.create_all)
 
@@ -33,3 +48,5 @@ app.include_router(api_router, prefix="/api")
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+

@@ -3,6 +3,7 @@ uvicorn
 sqlalchemy
 asyncpg
 psycopg2-binary
+aiosqlite
 pgvector
 pydantic
 pydantic-settings
@@ -11,3 +12,7 @@ python-multipart
 webvtt-py
 python-dotenv
 PyPDF2
+vaderSentiment
+google-genai
+anthropic
+aiohttp

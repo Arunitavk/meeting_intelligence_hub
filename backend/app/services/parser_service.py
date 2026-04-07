@@ -2,6 +2,9 @@ import webvtt
 import io
 import re
 import PyPDF2
+import logging
+
+logger = logging.getLogger(__name__)
 
 def parse_pdf(content_bytes: bytes):
     """Parses a PDF file by extracting text and falling back to txt parser logic."""
@@ -9,19 +12,23 @@ def parse_pdf(content_bytes: bytes):
     text = ""
     try:
         reader = PyPDF2.PdfReader(f)
+        logger.info(f"PDF reader created. Num pages: {len(reader.pages)}")
         for page in reader.pages:
             extracted = page.extract_text()
             if extracted:
                 text += extracted + "\n"
+        if not text.strip():
+            logger.warning("No text extracted from PDF. Possible image-based PDF.")
     except Exception as e:
-        print(f"Error parsing PDF: {e}")
+        logger.error(f"Error parsing PDF: {e}")
     return parse_txt(text)
 
 def parse_vtt(content: str):
     """Parses a VTT file and returns a list of segments."""
     segments = []
-    # Write string to a file-like object because webvtt-py reads files
+    # Write string to a file-like object
     f = io.StringIO(content)
+    logger.info(f"Starting VTT parsing. Content length: {len(content)}")
     try:
         for caption in webvtt.read_buffer(f):
             text = caption.text.replace("\n", " ").strip()
